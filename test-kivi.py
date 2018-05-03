@@ -35,12 +35,12 @@ class PlayButton(ButtonBehavior, Image):
     def on_press(self):
 
 	if self.mode == "playing":  
-		self.source = 'play.png'
+		self.source = './play.png'
 		self.mode = "paused"
 		self.player.pause()
 
 	elif self.mode == "paused":
-		self.source = 'pause.png'
+		self.source = './pause.png'
 		self.mode = "playing"
 		self.player.play()
 
@@ -48,7 +48,7 @@ class MyApp(App):
 
     def __init__(self, **kwargs):
         super(MyApp, self).__init__(**kwargs)
-	self.player = vlc.MediaPlayer('money.mp3')
+	self.player = vlc.MediaPlayer('./money.mp3')
 
         self.progressBar = ProgressBar()
 	self.progressBar.value = 0
@@ -68,12 +68,12 @@ class MyApp(App):
 		self.songLength.text = str(self.player.get_length())
 	else:
 		self.progressBar.value = 0
-		self.playButton.source = ' ./play.png'
+		self.playButton.source = './play.png'
 
     def build(self):
 	self.title = "Music Player"
 
-	Clock.schedule_interval(self.update_progressbar, 0.1)
+	Clock.schedule_interval(self.update_progressbar, 0.5)
 	
 	vl = BoxLayout(orientation='vertical')
 
