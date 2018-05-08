@@ -11,6 +11,9 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.slider import Slider
 from kivy.clock import Clock
 
+import os
+import sys
+
 #################################################
 class Model():
     
@@ -62,8 +65,8 @@ class ImageButton(ButtonBehavior, Image):
 class View():
         
     def __init__(self):
-        self.playButton = ImageButton("./play.png")
-        self.stopButton = ImageButton("./stop.png")
+        self.playButton = ImageButton(os.path.join(sys.path[0],"./play.png"))
+        self.stopButton = ImageButton(os.path.join(sys.path[0], "./stop.png"))
         self.progressBar = self.build_progress_bar()
         self.currentTimeLabel= Label(text="0:0", size_hint=(.15, 1))
         self.lengthLabel = Label(text="0:0",size_hint=(.15, 1))
@@ -110,7 +113,7 @@ class MusicPlayerController(App):
         super(MusicPlayerController, self).__init__(**kwargs)
 
         #TODO only works for one preloaded song
-        self.model = Model("./money.mp3")
+        self.model = Model(os.path.join(sys.path[0], "./money.mp3"))
 
         self.view = View()
         self.view.get_play_button().set_on_press_callback(self.play_or_pause) 
@@ -137,7 +140,7 @@ class MusicPlayerController(App):
 
     def stop(self):
         self.model.stop()
-        self.view.get_play_button().set_source("./play.png")
+        self.view.get_play_button().set_source(os.path.join(sys.path[0], "./play.png"))
         Clock.unschedule(self.update)
         self.view.get_progress_bar().value = 0
         self.view.get_current_time_label().text = "0:0"
@@ -146,11 +149,11 @@ class MusicPlayerController(App):
         state = self.model.get_state()
         if state == Model.IDLE or state == Model.PAUSED:
             self.model.play()
-            self.view.get_play_button().set_source("./pause.png")
+            self.view.get_play_button().set_source(os.path.join(sys.path[0], "./pause.png"))
             Clock.schedule_interval(self.update, 0.1) 
         else:
             self.model.pause()
-            self.view.get_play_button().set_source("./play.png")
+            self.view.get_play_button().set_source(os.path.join(sys.path[0], "./play.png"))
             Clock.unschedule(self.update)
         
 
