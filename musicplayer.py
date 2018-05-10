@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import vlc
 
 import kivy
@@ -42,6 +44,11 @@ class Model():
     def stop(self):
         self.media.stop()
         self.state = Model.IDLE
+
+    def goto(self, value):
+        print "goto"
+        print value
+        #self.media.set_position(int(value))
         
         
 #################################################        
@@ -65,9 +72,10 @@ class ImageButton(ButtonBehavior, Image):
 class View():
         
     def __init__(self):
-        self.playButton = ImageButton(os.path.join(sys.path[0],"./play.png"))
-        self.stopButton = ImageButton(os.path.join(sys.path[0], "./stop.png"))
+        self.playButton = ImageButton(os.path.join(sys.path[0],"play.png"))
+        self.stopButton = ImageButton(os.path.join(sys.path[0], "stop.png"))
         self.progressBar = self.build_progress_bar()
+
         self.currentTimeLabel= Label(text="0:0", size_hint=(.15, 1))
         self.lengthLabel = Label(text="0:0",size_hint=(.15, 1))
 
@@ -93,6 +101,14 @@ class View():
 
         vl = BoxLayout(orientation='vertical')
 
+        hl = BoxLayout(orientation='horizontal')
+        hl.add_widget(Image(source=os.path.join(sys.path[0],"cover.jpg")))
+        vl0 = BoxLayout(orientation='vertical')
+        vl0.add_widget(Label(text="Money for nothing"))
+        vl0.add_widget(Label(text="Dire Straits"))
+        hl.add_widget(vl0)
+        vl.add_widget(hl)
+
         hl0 = BoxLayout(orientation='horizontal')
         hl0.add_widget(self.currentTimeLabel)
         hl0.add_widget(self.progressBar)
@@ -113,11 +129,16 @@ class MusicPlayerController(App):
         super(MusicPlayerController, self).__init__(**kwargs)
 
         #TODO only works for one preloaded song
-        self.model = Model(os.path.join(sys.path[0], "./money.mp3"))
+        self.model = Model(os.path.join(sys.path[0], "money.mp3"))
 
         self.view = View()
         self.view.get_play_button().set_on_press_callback(self.play_or_pause) 
         self.view.get_stop_button().set_on_press_callback(self.stop) 
+        
+        self.view.get_progress_bar().bind(value=self.on_progress_bar_change)
+
+    def on_progress_bar_change(self, instance, value):
+        self.model.goto(value)
 
     def nicetime(self, ms):
         minutes=int((ms/(1000*60))%60)
@@ -138,9 +159,12 @@ class MusicPlayerController(App):
         self.view.get_length_label().text = self.nicetime(length)
         self.view.get_current_time_label().text = self.nicetime(current_time)
 
+    def goto(self, value): 
+        self.model.goto(value)
+
     def stop(self):
         self.model.stop()
-        self.view.get_play_button().set_source(os.path.join(sys.path[0], "./play.png"))
+        self.view.get_play_button().set_source(os.path.join(sys.path[0], "play.png"))
         Clock.unschedule(self.update)
         self.view.get_progress_bar().value = 0
         self.view.get_current_time_label().text = "0:0"
@@ -149,11 +173,11 @@ class MusicPlayerController(App):
         state = self.model.get_state()
         if state == Model.IDLE or state == Model.PAUSED:
             self.model.play()
-            self.view.get_play_button().set_source(os.path.join(sys.path[0], "./pause.png"))
+            self.view.get_play_button().set_source(os.path.join(sys.path[0], "pause.png"))
             Clock.schedule_interval(self.update, 0.1) 
         else:
             self.model.pause()
-            self.view.get_play_button().set_source(os.path.join(sys.path[0], "./play.png"))
+            self.view.get_play_button().set_source(os.path.join(sys.path[0], "play.png"))
             Clock.unschedule(self.update)
         
 
