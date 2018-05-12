@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+from __future__ import division
+import os
+import sys
+import math
+
 import vlc
 
 import kivy
@@ -13,8 +18,12 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.slider import Slider
 from kivy.clock import Clock
 
-import os
-import sys
+
+
+def get_image(file_name):
+    directory = os.path.join(sys.path[0], ".") 
+    return os.path.join(directory, file_name)
+    
 
 #################################################
 class Model():
@@ -46,9 +55,9 @@ class Model():
         self.state = Model.IDLE
 
     def goto(self, value):
-        print "goto"
-        print value
-        #self.media.set_position(int(value))
+        current = 100* self.media.get_position()
+        print "%f %f" % (current, value)
+        if math.fabs(value-current) > 1: self.media.set_position(value/100)
         
         
 #################################################        
@@ -71,19 +80,27 @@ class ImageButton(ButtonBehavior, Image):
 
 class View():
         
+    IMAGE_STOP = get_image( "stop_small.png")
+    IMAGE_PLAY = get_image( "play_small.png")
+    IMAGE_PAUSE = get_image( "pause_small.png")
+
     def __init__(self):
-        self.playButton = ImageButton(os.path.join(sys.path[0],"play.png"))
-        self.stopButton = ImageButton(os.path.join(sys.path[0], "stop.png"))
+        self.playButton = ImageButton(View.IMAGE_PLAY)
+        self.stopButton = ImageButton(View.IMAGE_STOP)
         self.progressBar = self.build_progress_bar()
 
-        self.currentTimeLabel= Label(text="0:0", size_hint=(.15, 1))
-        self.lengthLabel = Label(text="0:0",size_hint=(.15, 1))
+        self.currentTimeLabel= Label(text="--", size_hint=(.15, 1))
+        self.lengthLabel = Label(text="-",size_hint=(.15, 1))
 
     def get_play_button(self): return self.playButton
     def get_stop_button(self): return self.stopButton
     def get_progress_bar(self): return self.progressBar
     def get_current_time_label(self): return self.currentTimeLabel
     def get_length_label(self): return self.lengthLabel
+
+    def toggle_play_button(self, state):
+        if state==Model.IDLE or state==Model.PAUSED: self.playButton.set_source(View.IMAGE_PLAY)
+        if state==Model.PLAYING: self.playButton.set_source(View.IMAGE_PAUSE)
 
     def build_progress_bar(self):
         progressBar = Slider(size_hint=(.7, 1))
@@ -143,17 +160,17 @@ class MusicPlayerController(App):
     def nicetime(self, ms):
         minutes=int((ms/(1000*60))%60)
         seconds=int((ms/1000)%60)
-        return str(minutes)+":"+str(seconds)
+        return "%02d" % minutes + ":" + "%02d" % seconds 
 
     def update(self, dt):
 
         # update length in case it has changed        
         length = self.model.get_length()
-        self.view.get_progress_bar().range = (0, length)
+        current_time = self.model.get_time()
 
         # update progress bar
-        current_time = self.model.get_time()
-        self.view.get_progress_bar().value = current_time
+        prog = 100* current_time/(length*1.0)
+        self.view.get_progress_bar().value = prog
 
         # update labels 
         self.view.get_length_label().text = self.nicetime(length)
@@ -164,22 +181,21 @@ class MusicPlayerController(App):
 
     def stop(self):
         self.model.stop()
-        self.view.get_play_button().set_source(os.path.join(sys.path[0], "play.png"))
         Clock.unschedule(self.update)
         self.view.get_progress_bar().value = 0
-        self.view.get_current_time_label().text = "0:0"
+        self.view.get_current_time_label().text = "00:00"
+        self.view.toggle_play_button(self.model.get_state())
 
     def play_or_pause(self):
         state = self.model.get_state()
         if state == Model.IDLE or state == Model.PAUSED:
             self.model.play()
-            self.view.get_play_button().set_source(os.path.join(sys.path[0], "pause.png"))
             Clock.schedule_interval(self.update, 0.1) 
         else:
             self.model.pause()
-            self.view.get_play_button().set_source(os.path.join(sys.path[0], "play.png"))
             Clock.unschedule(self.update)
-        
+         
+        self.view.toggle_play_button(self.model.get_state())
 
     def build(self):
         self.title = "Music Player"
