@@ -19,7 +19,6 @@ from kivy.uix.slider import Slider
 from kivy.clock import Clock
 
 
-
 def get_image(file_name):
     directory = os.path.join(sys.path[0], ".") 
     return os.path.join(directory, file_name)
