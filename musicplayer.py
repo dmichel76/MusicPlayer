@@ -15,12 +15,15 @@ from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.slider import Slider
 from kivy.clock import Clock
+from kivy.uix.popup import Popup
 
+WDIR = os.path.dirname(os.path.realpath(__file__))
 
 def get_image(file_name):
-    directory = os.path.join(sys.path[0], ".") 
+    directory = os.path.join(WDIR, ".") 
     return os.path.join(directory, file_name)
     
 
@@ -55,7 +58,6 @@ class Model():
 
     def goto(self, value):
         current = 100* self.media.get_position()
-        print "%f %f" % (current, value)
         if math.fabs(value-current) > 1: self.media.set_position(value/100)
         
         
@@ -88,8 +90,8 @@ class View():
         self.stopButton = ImageButton(View.IMAGE_STOP)
         self.progressBar = self.build_progress_bar()
 
-        self.currentTimeLabel= Label(text="--", size_hint=(.15, 1))
-        self.lengthLabel = Label(text="-",size_hint=(.15, 1))
+        self.currentTimeLabel= Label(text="00:00", size_hint=(.15, 1))
+        self.lengthLabel = Label(text="--:--",size_hint=(.15, 1))
 
     def get_play_button(self): return self.playButton
     def get_stop_button(self): return self.stopButton
@@ -115,28 +117,35 @@ class View():
 
     def build(self):
 
-        vl = BoxLayout(orientation='vertical')
+        self.cover = "cover.jpg"
+        self.title = "Money For Nothing"
+        self.artist = "Dire Straits"
 
-        hl = BoxLayout(orientation='horizontal')
-        hl.add_widget(Image(source=os.path.join(sys.path[0],"cover.jpg")))
-        vl0 = BoxLayout(orientation='vertical')
-        vl0.add_widget(Label(text="Money for nothing"))
-        vl0.add_widget(Label(text="Dire Straits"))
-        hl.add_widget(vl0)
-        vl.add_widget(hl)
+        main = BoxLayout(orientation='vertical')
 
-        hl0 = BoxLayout(orientation='horizontal')
-        hl0.add_widget(self.currentTimeLabel)
-        hl0.add_widget(self.progressBar)
-        hl0.add_widget(self.lengthLabel)
-        vl.add_widget(hl0)
+        margin = Label(text=" ", size_hint=(1, 0.1))
+        main.add_widget(margin)
 
-        hl1 = BoxLayout(orientation='horizontal')
-        hl1.add_widget(self.stopButton)
-        hl1.add_widget(self.playButton)
-        vl.add_widget(hl1)
+        top = BoxLayout(orientation='horizontal', size_hint=(1, 0.5))
+        top.add_widget(Image(source=os.path.join(WDIR,self.cover)))
+        info = BoxLayout(orientation='vertical')
+        info.add_widget(Label(text=self.title))
+        info.add_widget(Label(text=self.artist))
+        top.add_widget(info)
+        main.add_widget(top)
+
+        middle = BoxLayout(orientation='horizontal', size_hint=(1, 0.25))
+        middle.add_widget(self.currentTimeLabel)
+        middle.add_widget(self.progressBar)
+        middle.add_widget(self.lengthLabel)
+        main.add_widget(middle)
+
+        bottom = BoxLayout(orientation='horizontal', size_hint=(1, 0.25))
+        bottom.add_widget(self.stopButton)
+        bottom.add_widget(self.playButton)
+        main.add_widget(bottom)
         
-        return vl
+        return main
 
 #################################################
 class MusicPlayerController(App):
@@ -144,13 +153,13 @@ class MusicPlayerController(App):
     def __init__(self, **kwargs):
         super(MusicPlayerController, self).__init__(**kwargs)
 
+
         #TODO only works for one preloaded song
-        self.model = Model(os.path.join(sys.path[0], "money.mp3"))
+        self.model = Model(os.path.join(WDIR, "money.mp3"))
 
         self.view = View()
         self.view.get_play_button().set_on_press_callback(self.play_or_pause) 
-        self.view.get_stop_button().set_on_press_callback(self.stop) 
-        
+        self.view.get_stop_button().set_on_press_callback(self.stop)         
         self.view.get_progress_bar().bind(value=self.on_progress_bar_change)
 
     def on_progress_bar_change(self, instance, value):
@@ -165,10 +174,12 @@ class MusicPlayerController(App):
 
         # update length in case it has changed        
         length = self.model.get_length()
+        if length==0: return
+
         current_time = self.model.get_time()
 
         # update progress bar
-        prog = 100* current_time/(length*1.0)
+        prog = 100 * current_time/(length*1.0)
         self.view.get_progress_bar().value = prog
 
         # update labels 
@@ -195,6 +206,7 @@ class MusicPlayerController(App):
             Clock.unschedule(self.update)
          
         self.view.toggle_play_button(self.model.get_state())
+
 
     def build(self):
         self.title = "Music Player"
